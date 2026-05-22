@@ -1,0 +1,6 @@
+{
+  "name": "Lena Kids",
+  "description": "Minimalist digital portal for Lena Kids enterprise operations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
