@@ -1,21 +1,76 @@
+import { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
 
 export default function App() {
+  const [isMobile, setIsMobile] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, []);
+
+  const videoSrc = isMobile ? "/background-mobile.mp4" : "/background-pc.mp4";
+  const posterSrc = isMobile ? "/background-poster-mobile.jpg" : "/background-poster-pc.jpg";
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = true;
+    video.playsInline = true;
+
+    const tryPlay = () => {
+      video.play().catch(() => {
+        // 自动播放被拦截时不报错，保留 poster 显示
+      });
+    };
+
+    tryPlay();
+
+    const handleWeixinJSBridgeReady = () => {
+      tryPlay();
+    };
+
+    const handleTouchStart = () => {
+      tryPlay();
+    };
+
+    document.addEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady);
+    document.addEventListener("touchstart", handleTouchStart, { once: true });
+
+    return () => {
+      document.removeEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady);
+      document.removeEventListener("touchstart", handleTouchStart);
+    };
+  }, [videoSrc]);
+
   return (
     <main className="relative w-full h-screen h-[100dvh] overflow-hidden flex flex-col justify-between font-sans text-neutral-900 select-none bg-[#fcfcfc]">
       
-      {/* 1. 全屏背景视频层 - 采用用户指定的原生 video 标签与真实路径 /background.mp4 */}
+      {/* 1. 全屏背景视频层 - 支持 PC/手机端分离适配与微信/iOS兼容性配置 */}
       <video
+        ref={videoRef}
+        src={videoSrc}
+        poster={posterSrc}
         className="fixed inset-0 w-full h-full object-cover z-0"
         autoPlay
         muted
         loop
         playsInline
         preload="auto"
-      >
-        <source src="/background.mp4" type="video/mp4" />
-      </video>
+        // TypeScript standard custom properties using standard webkit attributes
+        {...{
+          "webkit-playsinline": "true",
+          "x5-video-player-type": "h5",
+          "x5-video-player-fullscreen": "false",
+        }}
+      />
 
       {/* 2. 奢华优雅轻量遮罩层 (Delicate white-tint overlay to ensure elegant high-fashion readability) */}
       <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-white/0 via-white/5 to-white/10 md:bg-gradient-to-r md:from-white/0 md:via-white/5 md:to-white/15" />
@@ -37,9 +92,9 @@ export default function App() {
         </motion.div>
       </div>
 
-      {/* 4. 右侧内容布局 (Right-aligned text positioned in the background video's natural negative space) */}
-      <div className="relative z-20 flex-1 w-full h-full flex items-center justify-end">
-        <div className="w-full md:w-[48%] max-w-xl px-8 sm:px-12 md:mr-12 lg:mr-24 xl:mr-32 text-left flex flex-col justify-center">
+      {/* 4. 右侧内容布局 (Desktop matches right negative space, mobile pushes down to the white skirt area to clear face/chest) */}
+      <div className="relative z-20 flex-1 w-full h-full flex items-end md:items-center justify-start md:justify-end pb-24 sm:pb-28 md:pb-0 animate-fade-in">
+        <div className="w-full md:w-[48%] max-w-xl px-8 sm:px-12 md:mr-12 lg:mr-24 xl:mr-32 text-left flex flex-col justify-end md:justify-center">
           
           {/* 主标题 - Coming Soon */}
           <motion.div
@@ -47,10 +102,10 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
-            <h1 className="font-display font-extralight text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[0.1em] text-neutral-900 uppercase leading-[0.95] mb-2">
+            <h1 className="font-display font-extralight text-4xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[0.1em] text-neutral-900 uppercase leading-[0.95] mb-1 md:mb-2">
               Coming
             </h1>
-            <h1 className="font-display font-light text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[0.15em] text-neutral-900 uppercase leading-[0.95] mb-6">
+            <h1 className="font-display font-light text-4xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[0.15em] text-neutral-900 uppercase leading-[0.95] mb-4 md:mb-6">
               Soon
             </h1>
           </motion.div>
@@ -60,7 +115,7 @@ export default function App() {
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ duration: 1.5, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="h-[1px] w-24 bg-neutral-800/40 my-2 origin-left"
+            className="h-[1px] w-20 md:w-24 bg-neutral-800/40 my-1 md:my-2 origin-left"
           />
 
           {/* 副标题 - A new LENAKIDS experience is on the way. */}
@@ -68,7 +123,7 @@ export default function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.1, delay: 0.5, ease: "easeOut" }}
-            className="font-sans text-xs sm:text-sm md:text-base font-light leading-relaxed text-neutral-500 tracking-[0.25em] uppercase max-w-md mt-4 mb-10"
+            className="font-sans text-[10px] sm:text-xs md:text-sm lg:text-base font-light leading-relaxed text-neutral-500 tracking-[0.25em] uppercase max-w-md mt-3 md:mt-4 mb-6 md:mb-10"
           >
             A new LENAKIDS experience is on the way.
           </motion.p>
@@ -83,10 +138,10 @@ export default function App() {
               href="https://erp.lenakids.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative inline-flex items-center justify-between gap-6 px-8 py-4 border border-neutral-800 text-neutral-900 tracking-[0.25em] text-xs font-light uppercase transition-all duration-300 w-fit hover:bg-neutral-900 hover:text-white select-none cursor-pointer bg-white/20 backdrop-blur-xs"
+              className="group relative inline-flex items-center justify-between gap-6 px-6 py-3 md:px-8 md:py-4 border border-neutral-800 text-neutral-900 tracking-[0.25em] text-[10px] sm:text-xs font-light uppercase transition-all duration-300 w-fit hover:bg-neutral-900 hover:text-white select-none cursor-pointer bg-white/20 backdrop-blur-xs"
             >
               <span className="relative z-10 pl-1">Enterprise Portal</span>
-              <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300 relative z-10" />
+              <ArrowUpRight className="w-3.5 h-3.5 md:w-4 md:h-4 text-neutral-400 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300 relative z-10" />
             </a>
           </motion.div>
 
@@ -94,7 +149,7 @@ export default function App() {
       </div>
 
       {/* 5. 简约艺术感底署名 */}
-      <div className="absolute bottom-8 left-8 md:bottom-12 md:left-12 z-20">
+      <div className="absolute bottom-6 left-8 md:bottom-12 md:left-12 z-20">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.4 }}
