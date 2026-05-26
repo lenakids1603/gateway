@@ -9,6 +9,7 @@ export default function App() {
 
   const [isMobile, setIsMobile] = useState(getIsMobile);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
@@ -32,31 +33,86 @@ export default function App() {
     const video = videoRef.current;
     if (!video) return;
 
+    // Reset video started state on source change
+    setIsVideoPlaying(false);
+
+    // Forceful settings for maximum mobile and WeChat built-in browser compatibility
     video.muted = true;
+    video.defaultMuted = true;
     video.playsInline = true;
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "true");
+    video.setAttribute("x5-video-player-type", "h5");
+    video.setAttribute("x5-video-player-fullscreen", "false");
+
+    // Explicitly load the new resource source
+    video.load();
 
     const tryPlay = () => {
-      video.play().catch(() => {
-        // 自动播放被拦截时不报错，保留 poster 显示
-      });
+      video.play()
+        .then(() => {
+          setIsVideoPlaying(true);
+        })
+        .catch(() => {
+          // Failure is caught quietly, preserving the active poster display
+        });
     };
 
+    // Attempt to play immediately
     tryPlay();
 
+    // Attach event listeners to catch state changes and trigger plays
+    const handleMetadata = () => tryPlay();
+    const handleData = () => tryPlay();
+    const handleCanPlay = () => tryPlay();
+    const handlePlaying = () => setIsVideoPlaying(true);
+    const handlePause = () => setIsVideoPlaying(false);
+
+    video.addEventListener("loadedmetadata", handleMetadata);
+    video.addEventListener("loadeddata", handleData);
+    video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("playing", handlePlaying);
+    video.addEventListener("pause", handlePause);
+
+    // WeChat JSBridge trigger handler
     const handleWeixinJSBridgeReady = () => {
       tryPlay();
     };
 
-    const handleTouchStart = () => {
+    // General interaction event handler to bypass user-interaction restrictions
+    const handleInteraction = () => {
       tryPlay();
     };
 
+    // Replay when the user changes tab visibility back to active page
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        tryPlay();
+      }
+    };
+
+    // If industrial WeChat JSBridge is already loaded, invoke play immediately
+    if (typeof window !== "undefined" && (window as any).WeixinJSBridge) {
+      tryPlay();
+    }
+
     document.addEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady);
-    document.addEventListener("touchstart", handleTouchStart, { once: true });
+    document.addEventListener("touchstart", handleInteraction, { once: true });
+    document.addEventListener("click", handleInteraction, { once: true });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+      video.removeEventListener("loadedmetadata", handleMetadata);
+      video.removeEventListener("loadeddata", handleData);
+      video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("playing", handlePlaying);
+      video.removeEventListener("pause", handlePause);
+
       document.removeEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady);
-      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchstart", handleInteraction);
+      document.removeEventListener("click", handleInteraction);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [videoSrc]);
 
@@ -68,12 +124,12 @@ export default function App() {
         ref={videoRef}
         src={videoSrc}
         poster={posterSrc}
-        className="fixed inset-0 w-full h-full object-cover z-0"
+        className="fixed inset-0 w-full h-full object-cover z-0 transition-opacity duration-700"
         autoPlay
         muted
         loop
         playsInline
-        preload="metadata"
+        preload={isMobile ? "auto" : "metadata"}
         // TypeScript standard custom properties using standard webkit attributes
         {...{
           "webkit-playsinline": "true",
