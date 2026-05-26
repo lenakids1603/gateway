@@ -3,16 +3,26 @@ import { motion } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
 
 export default function App() {
-  const [isMobile, setIsMobile] = useState(false);
+  const getIsMobile = () =>
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 767px)").matches;
+
+  const [isMobile, setIsMobile] = useState(getIsMobile);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobile(event.matches);
     };
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
-    return () => window.removeEventListener("resize", checkIsMobile);
+
+    setIsMobile(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
   }, []);
 
   const videoSrc = isMobile ? "/background-mobile.mp4" : "/background-pc.mp4";
@@ -63,7 +73,7 @@ export default function App() {
         muted
         loop
         playsInline
-        preload="auto"
+        preload="metadata"
         // TypeScript standard custom properties using standard webkit attributes
         {...{
           "webkit-playsinline": "true",
