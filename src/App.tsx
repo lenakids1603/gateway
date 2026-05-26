@@ -9,7 +9,6 @@ export default function App() {
 
   const [isMobile, setIsMobile] = useState(getIsMobile);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
@@ -33,10 +32,6 @@ export default function App() {
     const video = videoRef.current;
     if (!video) return;
 
-    // Reset video started state on source change
-    setIsVideoPlaying(false);
-
-    // Forceful settings for maximum mobile and WeChat built-in browser compatibility
     video.muted = true;
     video.defaultMuted = true;
     video.playsInline = true;
@@ -46,73 +41,69 @@ export default function App() {
     video.setAttribute("x5-video-player-type", "h5");
     video.setAttribute("x5-video-player-fullscreen", "false");
 
-    // Explicitly load the new resource source
-    video.load();
+    let cancelled = false;
 
-    const tryPlay = () => {
-      video.play()
-        .then(() => {
-          setIsVideoPlaying(true);
-        })
-        .catch(() => {
-          // Failure is caught quietly, preserving the active poster display
-        });
-    };
+    const tryPlay = async () => {
+      if (cancelled) return;
 
-    // Attempt to play immediately
-    tryPlay();
-
-    // Attach event listeners to catch state changes and trigger plays
-    const handleMetadata = () => tryPlay();
-    const handleData = () => tryPlay();
-    const handleCanPlay = () => tryPlay();
-    const handlePlaying = () => setIsVideoPlaying(true);
-    const handlePause = () => setIsVideoPlaying(false);
-
-    video.addEventListener("loadedmetadata", handleMetadata);
-    video.addEventListener("loadeddata", handleData);
-    video.addEventListener("canplay", handleCanPlay);
-    video.addEventListener("playing", handlePlaying);
-    video.addEventListener("pause", handlePause);
-
-    // WeChat JSBridge trigger handler
-    const handleWeixinJSBridgeReady = () => {
-      tryPlay();
-    };
-
-    // General interaction event handler to bypass user-interaction restrictions
-    const handleInteraction = () => {
-      tryPlay();
-    };
-
-    // Replay when the user changes tab visibility back to active page
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        tryPlay();
+      try {
+        video.muted = true;
+        video.defaultMuted = true;
+        await video.play();
+      } catch (error) {
+        console.warn("Background video play failed", error);
       }
     };
 
-    // If industrial WeChat JSBridge is already loaded, invoke play immediately
-    if (typeof window !== "undefined" && (window as any).WeixinJSBridge) {
-      tryPlay();
-    }
+    const handleReady = () => {
+      void tryPlay();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void tryPlay();
+      }
+    };
+
+    const handleWeixinJSBridgeReady = () => {
+      void tryPlay();
+    };
+
+    const handleUserInteraction = () => {
+      void tryPlay();
+    };
+
+    video.addEventListener("loadedmetadata", handleReady);
+    video.addEventListener("loadeddata", handleReady);
+    video.addEventListener("canplay", handleReady);
+    video.addEventListener("canplaythrough", handleReady);
 
     document.addEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady);
-    document.addEventListener("touchstart", handleInteraction, { once: true });
-    document.addEventListener("click", handleInteraction, { once: true });
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("touchstart", handleUserInteraction, { once: true });
+    document.addEventListener("click", handleUserInteraction, { once: true });
+
+    if ((window as any).WeixinJSBridge) {
+      void tryPlay();
+    }
+
+    const timer = window.setTimeout(() => {
+      void tryPlay();
+    }, 300);
 
     return () => {
-      video.removeEventListener("loadedmetadata", handleMetadata);
-      video.removeEventListener("loadeddata", handleData);
-      video.removeEventListener("canplay", handleCanPlay);
-      video.removeEventListener("playing", handlePlaying);
-      video.removeEventListener("pause", handlePause);
+      cancelled = true;
+      window.clearTimeout(timer);
+
+      video.removeEventListener("loadedmetadata", handleReady);
+      video.removeEventListener("loadeddata", handleReady);
+      video.removeEventListener("canplay", handleReady);
+      video.removeEventListener("canplaythrough", handleReady);
 
       document.removeEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady);
-      document.removeEventListener("touchstart", handleInteraction);
-      document.removeEventListener("click", handleInteraction);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("touchstart", handleUserInteraction);
+      document.removeEventListener("click", handleUserInteraction);
     };
   }, [videoSrc]);
 
@@ -124,12 +115,12 @@ export default function App() {
         ref={videoRef}
         src={videoSrc}
         poster={posterSrc}
-        className="fixed inset-0 w-full h-full object-cover z-0 transition-opacity duration-700"
+        className="fixed inset-0 w-full h-full object-cover z-0"
         autoPlay
         muted
         loop
         playsInline
-        preload={isMobile ? "auto" : "metadata"}
+        preload="auto"
         // TypeScript standard custom properties using standard webkit attributes
         {...{
           "webkit-playsinline": "true",
