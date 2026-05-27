@@ -3,30 +3,48 @@ import { motion } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
 
 export default function App() {
-  const getIsMobile = () =>
-    typeof window !== "undefined" &&
-    window.matchMedia("(max-width: 767px)").matches;
+  const MOBILE_MEDIA_QUERY =
+  "(max-width: 768px), (pointer: coarse) and (max-width: 1024px)";
 
-  const [isMobile, setIsMobile] = useState(getIsMobile);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+const getIsMobile = () => {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+};
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
+const [isMobile, setIsMobile] = useState<boolean>(getIsMobile);
+const videoRef = useRef<HTMLVideoElement | null>(null);
 
-    const handleChange = (event: MediaQueryListEvent) => {
-      setIsMobile(event.matches);
-    };
+useEffect(() => {
+  const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
 
-    setIsMobile(mediaQuery.matches);
-    mediaQuery.addEventListener("change", handleChange);
+  const handleChange = () => {
+    setIsMobile(getIsMobile());
+  };
 
-    return () => {
-      mediaQuery.removeEventListener("change", handleChange);
-    };
-  }, []);
+  handleChange();
 
-  const videoSrc = isMobile ? "/background-mobile.mp4" : "/background-pc.mp4";
-  const posterSrc = isMobile ? "/background-poster-mobile.jpg" : "/background-poster-pc.jpg";
+  mediaQuery.addEventListener("change", handleChange);
+  window.addEventListener("resize", handleChange);
+  window.addEventListener("orientationchange", handleChange);
+
+  return () => {
+    mediaQuery.removeEventListener("change", handleChange);
+    window.removeEventListener("resize", handleChange);
+    window.removeEventListener("orientationchange", handleChange);
+  };
+}, []);
+
+  const assetVersion = "20260527";
+
+  const videoSrc = isMobile
+  ? `/background-mobile.mp4?v=${assetVersion}`
+  : `/background-pc.mp4?v=${assetVersion}`;
+
+  const posterSrc = isMobile
+  ? `/background-poster-mobile.jpg?v=${assetVersion}`
+  : `/background-poster-pc.jpg?v=${assetVersion}`;
+
+
 
   useEffect(() => {
     const video = videoRef.current;
@@ -41,19 +59,23 @@ export default function App() {
     video.setAttribute("x5-video-player-type", "h5");
     video.setAttribute("x5-video-player-fullscreen", "false");
 
+    video.load();
+
     let cancelled = false;
 
     const tryPlay = async () => {
-      if (cancelled) return;
+  if (cancelled) return;
 
-      try {
-        video.muted = true;
-        video.defaultMuted = true;
-        await video.play();
-      } catch (error) {
-        console.warn("Background video play failed", error);
-      }
-    };
+  video.muted = true;
+  video.defaultMuted = true;
+  video.volume = 0;
+
+  try {
+    await video.play();
+  } catch (error) {
+    console.warn("Background video play failed", error);
+  }
+};
 
     const handleReady = () => {
       void tryPlay();
@@ -78,14 +100,14 @@ export default function App() {
     video.addEventListener("canplay", handleReady);
     video.addEventListener("canplaythrough", handleReady);
 
-    document.addEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady);
+    document.addEventListener("WeixinJSBridgeReady", tryPlay, false);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("touchstart", handleUserInteraction, { once: true });
     document.addEventListener("click", handleUserInteraction, { once: true });
 
     if ((window as any).WeixinJSBridge) {
-      void tryPlay();
-    }
+  void tryPlay();
+}
 
     const timer = window.setTimeout(() => {
       void tryPlay();
@@ -112,6 +134,7 @@ export default function App() {
       
       {/* 1. 全屏背景视频层 - 支持 PC/手机端分离适配与微信/iOS兼容性配置 */}
       <video
+        key={videoSrc}
         ref={videoRef}
         src={videoSrc}
         poster={posterSrc}
@@ -120,7 +143,7 @@ export default function App() {
         muted
         loop
         playsInline
-        preload="auto"
+        preload="metadata"
         // TypeScript standard custom properties using standard webkit attributes
         {...{
           "webkit-playsinline": "true",
