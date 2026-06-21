@@ -100,7 +100,7 @@ useEffect(() => {
     video.addEventListener("canplay", handleReady);
     video.addEventListener("canplaythrough", handleReady);
 
-    document.addEventListener("WeixinJSBridgeReady", tryPlay, false);
+    document.addEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady, false);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("touchstart", handleUserInteraction, { once: true });
     document.addEventListener("click", handleUserInteraction, { once: true });
@@ -139,6 +139,7 @@ useEffect(() => {
         src={videoSrc}
         poster={posterSrc}
         className="fixed inset-0 w-full h-full object-cover z-0"
+        aria-hidden="true"
         autoPlay
         muted
         loop
