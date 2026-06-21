@@ -77,21 +77,21 @@ useEffect(() => {
   }
 };
 
-    // Repaint the background video by briefly removing and re-inserting its
-    // layer, so the WeChat X5 / iOS WKWebView compositor rasterizes a FRESH
-    // frame (this is what the user's manual pinch-zoom does). IMPORTANT: this
-    // is only ever called on a bfcache restore — running it during first-load
-    // autoplay would hide the playing <video>, abort playback, and drop it back
-    // to the poster image (which then needs a manual tap to recover).
+    // Repaint the background video with a tiny, reversible transform nudge so
+    // the WeChat X5 / iOS WKWebView compositor rasterizes a FRESH frame (the
+    // same thing the user's manual pinch-zoom does) WITHOUT ever pulling the
+    // <video> out of layout the way the old display:none toggle did — that
+    // toggle aborted X5's inline autoplay and made the first open regress into
+    // "tap the screen to play".
     const forceVideoRepaint = () => {
       if (cancelled) return;
-      video.style.display = "none";
-      void video.offsetHeight; // flush the hide
-      window.requestAnimationFrame(() => {
+      const prev = video.style.transform;
+      video.style.transform = "translateZ(0) scale(1.0001)";
+      void video.offsetHeight; // 刷新布局 -> 强制重绘
+      requestAnimationFrame(() => {
         if (cancelled) return;
-        video.style.display = ""; // re-create the layer -> forces a fresh raster
-        void video.offsetHeight;
-        void tryPlay(); // make sure it is actually playing again
+        video.style.transform = prev; // 还原,肉眼无感
+        if (video.paused) void tryPlay(); // 仅作兜底:真被暂停了才补一脚
       });
     };
 
@@ -105,20 +105,7 @@ useEffect(() => {
       }
     };
 
-    // Distinguish a genuine re-open (bfcache restore) from the initial load
-    // WITHOUT trusting event.persisted: WeChat's X5 webview fires the very
-    // first pageshow with persisted === true, which would wrongly trigger the
-    // repaint during first-load autoplay and abort it (the video then needs a
-    // manual tap). Instead, only repaint on a pageshow that FOLLOWS a pagehide
-    // — the initial load has no preceding pagehide, so its autoplay is never
-    // touched. The flag survives the bfcache freeze along with the closure.
-    let pageWasHidden = false;
-    const handlePageHide = () => {
-      pageWasHidden = true;
-    };
     const handlePageShow = () => {
-      if (!pageWasHidden) return;
-      pageWasHidden = false;
       forceVideoRepaint();
     };
 
@@ -138,7 +125,6 @@ useEffect(() => {
     document.addEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady, false);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("pageshow", handlePageShow);
-    window.addEventListener("pagehide", handlePageHide);
     document.addEventListener("touchstart", handleUserInteraction, { once: true });
     document.addEventListener("click", handleUserInteraction, { once: true });
 
@@ -162,7 +148,6 @@ useEffect(() => {
       document.removeEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pageshow", handlePageShow);
-      window.removeEventListener("pagehide", handlePageHide);
       document.removeEventListener("touchstart", handleUserInteraction);
       document.removeEventListener("click", handleUserInteraction);
     };
