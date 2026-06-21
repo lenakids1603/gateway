@@ -77,14 +77,50 @@ useEffect(() => {
   }
 };
 
+    // Toggling the video out of and back into layout within a single
+    // synchronous task forces the WeChat X5 / iOS WKWebView compositor to
+    // re-create and repaint the video layer — without ever painting a blank
+    // frame. This reproduces what the user's manual pinch-zoom does to recover
+    // a background that is stuck on the poster image.
+    const kickCompositor = () => {
+      if (cancelled) return;
+      const prevDisplay = video.style.display;
+      video.style.display = "none";
+      void video.offsetHeight; // read layout -> forces a synchronous reflow
+      video.style.display = prevDisplay;
+    };
+
+    // Resume playback and then nudge the compositor once it has had a chance
+    // to (re)start, so we never stay frozen on the poster frame.
+    const restoreAndPlay = () => {
+      if (cancelled) return;
+      void tryPlay();
+      window.requestAnimationFrame(() => {
+        kickCompositor();
+        window.requestAnimationFrame(kickCompositor);
+      });
+      window.setTimeout(kickCompositor, 120);
+    };
+
     const handleReady = () => {
       void tryPlay();
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        void tryPlay();
+        restoreAndPlay();
       }
+    };
+
+    // Re-opening the same link in WeChat usually restores the page from
+    // bfcache: the cached <video> is paused and its media events won't fire
+    // again, so nothing retriggers playback. Reload the source to re-arm those
+    // events, then resume and repaint.
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        video.load();
+      }
+      restoreAndPlay();
     };
 
     const handleWeixinJSBridgeReady = () => {
@@ -102,6 +138,7 @@ useEffect(() => {
 
     document.addEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady, false);
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pageshow", handlePageShow);
     document.addEventListener("touchstart", handleUserInteraction, { once: true });
     document.addEventListener("click", handleUserInteraction, { once: true });
 
@@ -124,6 +161,7 @@ useEffect(() => {
 
       document.removeEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pageshow", handlePageShow);
       document.removeEventListener("touchstart", handleUserInteraction);
       document.removeEventListener("click", handleUserInteraction);
     };
