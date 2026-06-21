@@ -105,13 +105,20 @@ useEffect(() => {
       }
     };
 
-    // Re-opening the same link in WeChat restores the page from bfcache: React
-    // does not remount and the <video> stays frozen on its poster, recovering
-    // only after a layout change (the user's manual pinch-zoom). Detect that
-    // restore (persisted === true) and repaint. Do NOTHING on the initial load
-    // so the normal first-load autoplay path stays completely untouched.
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (!event.persisted) return;
+    // Distinguish a genuine re-open (bfcache restore) from the initial load
+    // WITHOUT trusting event.persisted: WeChat's X5 webview fires the very
+    // first pageshow with persisted === true, which would wrongly trigger the
+    // repaint during first-load autoplay and abort it (the video then needs a
+    // manual tap). Instead, only repaint on a pageshow that FOLLOWS a pagehide
+    // — the initial load has no preceding pagehide, so its autoplay is never
+    // touched. The flag survives the bfcache freeze along with the closure.
+    let pageWasHidden = false;
+    const handlePageHide = () => {
+      pageWasHidden = true;
+    };
+    const handlePageShow = () => {
+      if (!pageWasHidden) return;
+      pageWasHidden = false;
       forceVideoRepaint();
     };
 
@@ -131,6 +138,7 @@ useEffect(() => {
     document.addEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady, false);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("pagehide", handlePageHide);
     document.addEventListener("touchstart", handleUserInteraction, { once: true });
     document.addEventListener("click", handleUserInteraction, { once: true });
 
@@ -154,6 +162,7 @@ useEffect(() => {
       document.removeEventListener("WeixinJSBridgeReady", handleWeixinJSBridgeReady);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("pagehide", handlePageHide);
       document.removeEventListener("touchstart", handleUserInteraction);
       document.removeEventListener("click", handleUserInteraction);
     };
