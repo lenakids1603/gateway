@@ -77,29 +77,22 @@ useEffect(() => {
   }
 };
 
-    // Toggling the video out of and back into layout within a single
-    // synchronous task forces the WeChat X5 / iOS WKWebView compositor to
-    // re-create and repaint the video layer — without ever painting a blank
-    // frame. This reproduces what the user's manual pinch-zoom does to recover
-    // a background that is stuck on the poster image.
-    const kickCompositor = () => {
+    // Repaint the background video by briefly removing and re-inserting its
+    // layer, so the WeChat X5 / iOS WKWebView compositor rasterizes a FRESH
+    // frame (this is what the user's manual pinch-zoom does). IMPORTANT: this
+    // is only ever called on a bfcache restore — running it during first-load
+    // autoplay would hide the playing <video>, abort playback, and drop it back
+    // to the poster image (which then needs a manual tap to recover).
+    const forceVideoRepaint = () => {
       if (cancelled) return;
-      const prevDisplay = video.style.display;
       video.style.display = "none";
-      void video.offsetHeight; // read layout -> forces a synchronous reflow
-      video.style.display = prevDisplay;
-    };
-
-    // Resume playback and then nudge the compositor once it has had a chance
-    // to (re)start, so we never stay frozen on the poster frame.
-    const restoreAndPlay = () => {
-      if (cancelled) return;
-      void tryPlay();
+      void video.offsetHeight; // flush the hide
       window.requestAnimationFrame(() => {
-        kickCompositor();
-        window.requestAnimationFrame(kickCompositor);
+        if (cancelled) return;
+        video.style.display = ""; // re-create the layer -> forces a fresh raster
+        void video.offsetHeight;
+        void tryPlay(); // make sure it is actually playing again
       });
-      window.setTimeout(kickCompositor, 120);
     };
 
     const handleReady = () => {
@@ -108,19 +101,18 @@ useEffect(() => {
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        restoreAndPlay();
+        void tryPlay();
       }
     };
 
-    // Re-opening the same link in WeChat usually restores the page from
-    // bfcache: the cached <video> is paused and its media events won't fire
-    // again, so nothing retriggers playback. Reload the source to re-arm those
-    // events, then resume and repaint.
+    // Re-opening the same link in WeChat restores the page from bfcache: React
+    // does not remount and the <video> stays frozen on its poster, recovering
+    // only after a layout change (the user's manual pinch-zoom). Detect that
+    // restore (persisted === true) and repaint. Do NOTHING on the initial load
+    // so the normal first-load autoplay path stays completely untouched.
     const handlePageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        video.load();
-      }
-      restoreAndPlay();
+      if (!event.persisted) return;
+      forceVideoRepaint();
     };
 
     const handleWeixinJSBridgeReady = () => {
