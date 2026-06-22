@@ -73,6 +73,8 @@ useEffect(() => {
   try {
     await video.play();
   } catch (error) {
+    (window as any).__playErr =
+      ((error as any)?.name || "Err") + ": " + ((error as any)?.message || "");
     console.warn("Background video play failed", error);
   }
 };
@@ -155,7 +157,7 @@ useEffect(() => {
 
   // === TEMP DEBUG HUD — 诊断用,勿动其它逻辑 ===
   useEffect(() => {
-    const BUILD = "DEBUG-1";
+    const BUILD = "DEBUG-2";
     const hud = document.createElement("div");
     hud.style.cssText =
       "position:fixed;top:0;left:0;right:0;z-index:2147483647;" +
@@ -188,9 +190,14 @@ useEffect(() => {
         "BUILD=" + BUILD + " | vis=" + document.visibilityState + "\nvideo: " +
         (el
           ? "paused=" + el.paused + " ready=" + el.readyState +
+            " net=" + el.networkState +
+            " err=" + (el.error ? el.error.code : "none") +
+            " preload=" + el.preload +
             " t=" + el.currentTime.toFixed(2) +
             " size=" + el.videoWidth + "x" + el.videoHeight + " muted=" + el.muted
-          : "NOT FOUND");
+          : "NOT FOUND") +
+        "\nplayErr=" + ((window as any).__playErr || "none") +
+        "\nsrc=" + (el ? (el.currentSrc || "EMPTY").slice(-42) : "?");
       hud.textContent = head + "\n----\n" + log.join("\n");
     }, 250);
 
@@ -221,7 +228,7 @@ useEffect(() => {
         muted
         loop
         playsInline
-        preload="metadata"
+        preload="auto"
         // TypeScript standard custom properties using standard webkit attributes
         {...{
           "webkit-playsinline": "true",
