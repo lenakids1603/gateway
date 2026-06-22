@@ -153,6 +153,59 @@ useEffect(() => {
     };
   }, [videoSrc]);
 
+  // === TEMP DEBUG HUD — 诊断用,勿动其它逻辑 ===
+  useEffect(() => {
+    const BUILD = "DEBUG-1";
+    const hud = document.createElement("div");
+    hud.style.cssText =
+      "position:fixed;top:0;left:0;right:0;z-index:2147483647;" +
+      "background:rgba(0,0,0,.82);color:#0f0;font:11px/1.4 monospace;" +
+      "padding:6px 8px;white-space:pre-wrap;max-height:48vh;overflow:auto;pointer-events:none;";
+    document.body.appendChild(hud);
+
+    const log: string[] = [];
+    const add = (m: string) => {
+      log.unshift("[" + new Date().toISOString().slice(11, 23) + "] " + m);
+      if (log.length > 25) log.pop();
+    };
+    const getV = () => document.querySelector("video") as HTMLVideoElement | null;
+    const evts = ["loadeddata","canplay","play","playing","pause","waiting","stalled","suspend","ended","error","emptied"];
+    const onEvt = (e: Event) => add("VIDEO " + e.type);
+    const el0 = getV();
+    if (el0) evts.forEach((n) => el0.addEventListener(n, onEvt));
+
+    const onShow = (e: PageTransitionEvent) => add("pageshow persisted=" + e.persisted);
+    const onHide = (e: PageTransitionEvent) => add("pagehide persisted=" + e.persisted);
+    const onVis = () => add("visibilitychange -> " + document.visibilityState);
+    window.addEventListener("pageshow", onShow);
+    window.addEventListener("pagehide", onHide);
+    document.addEventListener("visibilitychange", onVis);
+    add("HUD mounted build=" + BUILD);
+
+    const timer = window.setInterval(() => {
+      const el = getV();
+      const head =
+        "BUILD=" + BUILD + " | vis=" + document.visibilityState + "\nvideo: " +
+        (el
+          ? "paused=" + el.paused + " ready=" + el.readyState +
+            " t=" + el.currentTime.toFixed(2) +
+            " size=" + el.videoWidth + "x" + el.videoHeight + " muted=" + el.muted
+          : "NOT FOUND");
+      hud.textContent = head + "\n----\n" + log.join("\n");
+    }, 250);
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("pageshow", onShow);
+      window.removeEventListener("pagehide", onHide);
+      document.removeEventListener("visibilitychange", onVis);
+      const el = getV();
+      if (el) evts.forEach((n) => el.removeEventListener(n, onEvt));
+      hud.remove();
+    };
+  }, []);
+  // === END TEMP DEBUG HUD ===
+
   return (
     <main className="relative w-full h-screen h-[100dvh] overflow-hidden flex flex-col justify-between font-sans text-neutral-900 select-none bg-[#fcfcfc]">
       
