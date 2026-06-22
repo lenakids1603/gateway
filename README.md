@@ -2,7 +2,7 @@
 
 LENAKIDS 高定童装品牌的「即将上线」预告页。整屏沉浸式背景视频 + 极简排版，针对桌面端 / 移动端分别适配，并对微信、iOS Safari 等环境做了完善的视频自动播放兼容处理。
 
-线上入口：[lenakids.com](https://lenakids.com) ｜ 企业门户：[erp.lenakids.com](https://erp.lenakids.com)
+线上入口：[lenakids.com](https://lenakids.com) ｜ 企业门户：[op.lenakids.com](https://op.lenakids.com)
 
 ## 技术栈
 

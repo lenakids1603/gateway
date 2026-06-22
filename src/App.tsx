@@ -240,7 +240,7 @@ useEffect(() => {
             transition={{ duration: 1.1, delay: 0.7, ease: "easeOut" }}
           >
             <a
-              href="https://erp.lenakids.com"
+              href="https://op.lenakids.com"
               target="_blank"
               rel="noopener noreferrer"
               className="group relative inline-flex items-center justify-between gap-6 px-6 py-3 md:px-8 md:py-4 border border-neutral-800 text-neutral-900 tracking-[0.25em] text-[10px] sm:text-xs font-light uppercase transition-all duration-300 w-fit hover:bg-neutral-900 hover:text-white select-none cursor-pointer bg-white/20 backdrop-blur-xs"
