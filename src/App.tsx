@@ -242,7 +242,7 @@ useEffect(() => {
           >
             <a
               href="https://mate.lenakids.com"
-              target="_blank"
+              target={isMobile ? "_self" : "_blank"}
               rel="noopener noreferrer"
               className="group relative inline-flex min-h-12 w-full items-center justify-between gap-5 border border-neutral-800 bg-white/25 px-6 py-3 text-[10px] font-light uppercase tracking-[0.2em] text-neutral-900 backdrop-blur-xs transition-all duration-300 hover:bg-neutral-900 hover:text-white sm:text-xs min-[769px]:w-auto min-[769px]:min-w-44 min-[769px]:px-7 min-[769px]:py-4 select-none cursor-pointer"
             >
@@ -250,8 +250,8 @@ useEffect(() => {
               <ArrowUpRight className="w-3.5 h-3.5 md:w-4 md:h-4 text-neutral-400 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300 relative z-10" />
             </a>
             <a
-              href="https://erp.lenakids.com"
-              target="_blank"
+              href="https://op.lenakids.com"
+              target={isMobile ? "_self" : "_blank"}
               rel="noopener noreferrer"
               className="group relative inline-flex min-h-12 w-full items-center justify-between gap-5 border border-neutral-500/60 bg-transparent px-6 py-3 text-[10px] font-light uppercase tracking-[0.2em] text-neutral-900 backdrop-blur-xs transition-all duration-300 hover:border-neutral-800 hover:bg-neutral-900 hover:text-white sm:text-xs min-[769px]:w-auto min-[769px]:min-w-44 min-[769px]:px-7 min-[769px]:py-4 select-none cursor-pointer"
             >
