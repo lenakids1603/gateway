@@ -201,17 +201,17 @@ useEffect(() => {
       <div className="relative z-20 flex-1 w-full h-full flex items-end md:items-center justify-start md:justify-end pb-24 sm:pb-28 md:pb-0 animate-fade-in">
         <div className="w-full md:w-[48%] max-w-xl px-8 sm:px-12 md:mr-12 lg:mr-24 xl:mr-32 text-left flex flex-col justify-end md:justify-center">
           
-          {/* 主标题 - Coming Soon */}
+          {/* 主标题 */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
-            <h1 className="font-display font-extralight text-4xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[0.1em] text-neutral-900 uppercase leading-[0.95] mb-1 md:mb-2">
-              Coming
-            </h1>
-            <h1 className="font-display font-light text-4xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[0.15em] text-neutral-900 uppercase leading-[0.95] mb-4 md:mb-6">
-              Soon
+            <h1 className="font-display font-extralight text-[clamp(1.75rem,7.5vw,3.5rem)] md:text-[clamp(1.75rem,3.5vw,3.25rem)] tracking-[0.06em] sm:tracking-[0.09em] md:tracking-[0.07em] text-neutral-900 uppercase leading-[1.02] mb-4 md:mb-6 max-w-full">
+              <span className="block lg:whitespace-nowrap">Enter the world</span>
+              <span className="block font-light tracking-[0.1em] md:tracking-[0.12em] lg:whitespace-nowrap">
+                Of LenaKids
+              </span>
             </h1>
           </motion.div>
 
@@ -223,29 +223,39 @@ useEffect(() => {
             className="h-[1px] w-20 md:w-24 bg-neutral-800/40 my-1 md:my-2 origin-left"
           />
 
-          {/* 副标题 - A new LENAKIDS experience is on the way. */}
+          {/* 副标题 */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.1, delay: 0.5, ease: "easeOut" }}
-            className="font-sans text-[10px] sm:text-xs md:text-sm lg:text-base font-light leading-relaxed text-neutral-500 tracking-[0.25em] uppercase max-w-md mt-3 md:mt-4 mb-6 md:mb-10"
+            className="font-sans text-[10px] sm:text-xs md:text-sm lg:text-base font-light leading-relaxed text-neutral-500 tracking-[0.2em] sm:tracking-[0.25em] uppercase max-w-md mt-3 md:mt-4 mb-6 md:mb-10"
           >
-            A new LENAKIDS experience is on the way.
+            Discover the worlds of LenaKids.
           </motion.p>
 
-          {/* 按钮 - Enterprise Portal */}
+          {/* 产品入口 */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.1, delay: 0.7, ease: "easeOut" }}
+            className="flex w-full max-w-sm flex-col gap-3 min-[769px]:max-w-none min-[769px]:flex-row min-[769px]:gap-4"
           >
             <a
-              href="https://op.lenakids.com"
+              href="https://mate.lenakids.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative inline-flex items-center justify-between gap-6 px-6 py-3 md:px-8 md:py-4 border border-neutral-800 text-neutral-900 tracking-[0.25em] text-[10px] sm:text-xs font-light uppercase transition-all duration-300 w-fit hover:bg-neutral-900 hover:text-white select-none cursor-pointer bg-white/20 backdrop-blur-xs"
+              className="group relative inline-flex min-h-12 w-full items-center justify-between gap-5 border border-neutral-800 bg-white/25 px-6 py-3 text-[10px] font-light uppercase tracking-[0.2em] text-neutral-900 backdrop-blur-xs transition-all duration-300 hover:bg-neutral-900 hover:text-white sm:text-xs min-[769px]:w-auto min-[769px]:min-w-44 min-[769px]:px-7 min-[769px]:py-4 select-none cursor-pointer"
             >
-              <span className="relative z-10 pl-1">Enterprise Portal</span>
+              <span className="relative z-10 pl-1">LenaMate</span>
+              <ArrowUpRight className="w-3.5 h-3.5 md:w-4 md:h-4 text-neutral-400 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300 relative z-10" />
+            </a>
+            <a
+              href="https://erp.lenakids.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative inline-flex min-h-12 w-full items-center justify-between gap-5 border border-neutral-500/60 bg-transparent px-6 py-3 text-[10px] font-light uppercase tracking-[0.2em] text-neutral-900 backdrop-blur-xs transition-all duration-300 hover:border-neutral-800 hover:bg-neutral-900 hover:text-white sm:text-xs min-[769px]:w-auto min-[769px]:min-w-44 min-[769px]:px-7 min-[769px]:py-4 select-none cursor-pointer"
+            >
+              <span className="relative z-10 pl-1">OpsPilot</span>
               <ArrowUpRight className="w-3.5 h-3.5 md:w-4 md:h-4 text-neutral-400 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300 relative z-10" />
             </a>
           </motion.div>
